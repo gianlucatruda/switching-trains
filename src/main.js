@@ -14,7 +14,12 @@ const scene = new THREE.Scene();
 
 // Create a train group
 const trainGroup = new THREE.Group();
-
+let trainProps = {
+  clearcoat: 0.8,
+  clearcoatRoughness: 0.5,
+  metalness: 0.8,
+  roughness: 0.5,
+};
 const textureLoader = new THREE.TextureLoader();
 const colorMap = textureLoader.load('textures/colormap.png', (texture) => {
   texture.encoding = THREE.sRGBEncoding;
@@ -26,10 +31,7 @@ loader.load('models/train-electric-bullet-a.glb', (gltf) => {
     if (node.isMesh) {
       node.material = new THREE.MeshPhysicalMaterial({
         map: colorMap,
-        metalness: 0.8,
-        roughness: 0.4,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.3,
+        ...trainProps,
       });
       node.material.needsUpdate = true;
     }
@@ -43,10 +45,7 @@ loader.load('models/train-electric-bullet-b.glb', (gltf) => { // carriage model 
     if (node.isMesh) {
       node.material = new THREE.MeshPhysicalMaterial({
         map: colorMap,
-        metalness: 0.8,
-        roughness: 0.4,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.3,
+        ...trainProps,
       });
       node.material.needsUpdate = true;
     }
@@ -59,35 +58,21 @@ loader.load('models/train-electric-bullet-b.glb', (gltf) => { // carriage model 
 
 scene.add(trainGroup);
 
-// // Define material properties
-// let objProps = {
-//   clearcoat: 0.8,
-//   clearcoatRoughness: 0.5,
-//   metalness: 0.8,
-//   roughness: 0.5,
-// };
-// const objMaterial = new THREE.MeshPhysicalMaterial({
-//   color: "limegreen",
-//   ...objProps,
-//   // wireframe: true,
-// });
-//
-// // Create an geometry for an object
-// const objGeometry = new THREE.TorusGeometry(1, 0.4, 20, 100);
-// // Create mesh from object and material and add it to the scene
-// const objMesh = new THREE.Mesh(objGeometry, objMaterial);
-// scene.add(objMesh);
-
-// // Add a UI pane that binds the material properties and triggers onchange update
-// const pane = new Pane();
-// const objFolder = pane.addFolder({ title: objGeometry.type });
-// for (const [key, _] of Object.entries(objProps)) {
-//   objFolder
-//     .addBinding(objProps, key, { min: 0.0, max: 1.0, step: 0.1, label: key })
-//     .on("change", (prop) => {
-//       objMaterial[key] = prop.value;
-//     });
-// }
+const pane = new Pane();
+const objFolder = pane.addFolder({ title: "train" });
+for (const [key, _] of Object.entries(trainProps)) {
+  objFolder
+    .addBinding(trainProps, key, { min: 0.0, max: 1.0, step: 0.1, label: key })
+    .on("change", (prop) => {
+      trainProps[key] = prop.value; // Update the correct object
+      trainGroup.traverse((node) => {
+        if (node.isMesh) {
+          node.material[key] = prop.value;
+          node.material.needsUpdate = true;
+        }
+      });
+    });
+}
 
 // initialize the camera
 const camera = new THREE.PerspectiveCamera(
@@ -96,7 +81,8 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   200,
 );
-camera.position.z = 5;
+camera.position.z = 8;
+camera.position.y = 2;
 
 // Ambient lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -120,7 +106,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // instantiate the controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-// controls.autoRotate = true;
+controls.autoRotate = true;
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
