@@ -10,6 +10,11 @@ document.body.appendChild(stats.dom);
 
 // initialize the scene
 const scene = new THREE.Scene();
+
+
+// Create a train group
+const trainGroup = new THREE.Group();
+
 const textureLoader = new THREE.TextureLoader();
 const colorMap = textureLoader.load('textures/colormap.png', (texture) => {
   texture.encoding = THREE.sRGBEncoding;
@@ -22,49 +27,71 @@ loader.load('models/train-electric-bullet-a.glb', (gltf) => {
       node.material = new THREE.MeshPhysicalMaterial({
         map: colorMap,
         metalness: 0.8,
-        roughness: 0.2,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.1,
+        roughness: 0.4,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.3,
       });
       node.material.needsUpdate = true;
     }
   });
-  let train = scene.add(gltf.scene);
+  // Add train engine object to trainGroup
+  trainGroup.add(gltf.scene);
+
+});
+loader.load('models/train-electric-bullet-b.glb', (gltf) => { // carriage model (b)
+  gltf.scene.traverse((node) => {
+    if (node.isMesh) {
+      node.material = new THREE.MeshPhysicalMaterial({
+        map: colorMap,
+        metalness: 0.8,
+        roughness: 0.4,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.3,
+      });
+      node.material.needsUpdate = true;
+    }
+  });
+  // Add the `train-electric-bullet-b.glb` model to the train group as a carriage (b)       
+  // Offset by some distance so it follows the train engine
+  gltf.scene.position.set(0, 0, -2.7);
+  trainGroup.add(gltf.scene);
 });
 
-// Define material properties
-let objProps = {
-  clearcoat: 0.8,
-  clearcoatRoughness: 0.5,
-  metalness: 0.8,
-  roughness: 0.5,
-};
-const objMaterial = new THREE.MeshPhysicalMaterial({
-  color: "limegreen",
-  ...objProps,
-  // wireframe: true,
-});
+scene.add(trainGroup);
 
-// Create an geometry for an object
-const objGeometry = new THREE.TorusGeometry(1, 0.4, 20, 100);
-// Create mesh from object and material and add it to the scene
-const objMesh = new THREE.Mesh(objGeometry, objMaterial);
-scene.add(objMesh);
+// // Define material properties
+// let objProps = {
+//   clearcoat: 0.8,
+//   clearcoatRoughness: 0.5,
+//   metalness: 0.8,
+//   roughness: 0.5,
+// };
+// const objMaterial = new THREE.MeshPhysicalMaterial({
+//   color: "limegreen",
+//   ...objProps,
+//   // wireframe: true,
+// });
+//
+// // Create an geometry for an object
+// const objGeometry = new THREE.TorusGeometry(1, 0.4, 20, 100);
+// // Create mesh from object and material and add it to the scene
+// const objMesh = new THREE.Mesh(objGeometry, objMaterial);
+// scene.add(objMesh);
 
-// Add a UI pane that binds the material properties and triggers onchange update
-const pane = new Pane();
-const objFolder = pane.addFolder({ title: objGeometry.type });
-for (const [key, _] of Object.entries(objProps)) {
-  objFolder
-    .addBinding(objProps, key, { min: 0.0, max: 1.0, step: 0.1, label: key })
-    .on("change", (prop) => {
-      objMaterial[key] = prop.value;
-    });
-}
+// // Add a UI pane that binds the material properties and triggers onchange update
+// const pane = new Pane();
+// const objFolder = pane.addFolder({ title: objGeometry.type });
+// for (const [key, _] of Object.entries(objProps)) {
+//   objFolder
+//     .addBinding(objProps, key, { min: 0.0, max: 1.0, step: 0.1, label: key })
+//     .on("change", (prop) => {
+//       objMaterial[key] = prop.value;
+//     });
+// }
 
 // initialize the camera
 const camera = new THREE.PerspectiveCamera(
-  35,
+  50,
   window.innerWidth / window.innerHeight,
   0.1,
   200,
@@ -72,12 +99,12 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.z = 5;
 
 // Ambient lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
 
 // Directional lighting
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 5, 5);
+directionalLight.position.set(1, 1, 1);
 scene.add(directionalLight);
 
 // initialize the renderer
