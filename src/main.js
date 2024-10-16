@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { Pane } from "tweakpane";
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Stats (FPS)
 const stats = Stats();
@@ -9,6 +10,45 @@ document.body.appendChild(stats.dom);
 
 // initialize the scene
 const scene = new THREE.Scene();
+
+// Create a loading manager
+const manager = new THREE.LoadingManager();
+
+// Create loaders
+const textureLoader = new THREE.TextureLoader(manager);
+const gltfLoader = new GLTFLoader(manager);
+
+// Load the texture
+let texture;
+textureLoader.load('textures/colormap.png', function(tex) {
+  texture = tex;
+}, undefined, function(error) {
+  console.error('Error loading texture', error);
+});
+
+// Load the model
+let model;
+gltfLoader.load('models/train-electric-bullet-a.glb', function(gltf) {
+  model = gltf.scene;
+}, undefined, function(error) {
+  console.error('Error loading model', error);
+});
+
+// When all assets are loaded
+manager.onLoad = function() {
+  // Apply the texture to the model's meshes
+  // Adapt the colormap format
+  texture.encoding = THREE.RGBE
+  model.traverse(function(child) {
+    if (child.isMesh) {
+      child.material.map = texture;
+      child.material.needsUpdate = true;
+    }
+  });
+
+  // Add the model to the scene
+  scene.add(model);
+};
 
 // Define material properties
 let objProps = {
