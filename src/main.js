@@ -10,45 +10,27 @@ document.body.appendChild(stats.dom);
 
 // initialize the scene
 const scene = new THREE.Scene();
-
-// Create a loading manager
-const manager = new THREE.LoadingManager();
-
-// Create loaders
-const textureLoader = new THREE.TextureLoader(manager);
-const gltfLoader = new GLTFLoader(manager);
-
-// Load the texture
-let texture;
-textureLoader.load('textures/colormap.png', function(tex) {
-  texture = tex;
-}, undefined, function(error) {
-  console.error('Error loading texture', error);
+const textureLoader = new THREE.TextureLoader();
+const colorMap = textureLoader.load('textures/colormap.png', (texture) => {
+  texture.encoding = THREE.sRGBEncoding;
+  texture.flipY = false; // GLB models often require this
 });
-
-// Load the model
-let model;
-gltfLoader.load('models/train-electric-bullet-a.glb', function(gltf) {
-  model = gltf.scene;
-}, undefined, function(error) {
-  console.error('Error loading model', error);
-});
-
-// When all assets are loaded
-manager.onLoad = function() {
-  // Apply the texture to the model's meshes
-  // Adapt the colormap format
-  texture.encoding = THREE.RGBE
-  model.traverse(function(child) {
-    if (child.isMesh) {
-      child.material.map = texture;
-      child.material.needsUpdate = true;
+const loader = new GLTFLoader();
+loader.load('models/train-electric-bullet-a.glb', (gltf) => {
+  gltf.scene.traverse((node) => {
+    if (node.isMesh) {
+      node.material = new THREE.MeshPhysicalMaterial({
+        map: colorMap,
+        metalness: 0.8,
+        roughness: 0.2,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.1,
+      });
+      node.material.needsUpdate = true;
     }
   });
-
-  // Add the model to the scene
-  scene.add(model);
-};
+  let train = scene.add(gltf.scene);
+});
 
 // Define material properties
 let objProps = {
